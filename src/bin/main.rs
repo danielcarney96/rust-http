@@ -2,14 +2,22 @@ use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::fs;
+use http_server::ThreadPool;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        handle_connection(stream);
+    match ThreadPool::new(4) {
+        Ok(pool) => {
+            for stream in listener.incoming() {
+                let stream = stream.unwrap();
+        
+                pool.execute(|| {
+                    handle_connection(stream);
+                });
+            }
+        },
+        Err(_err) => println!("Pool failed to create")
     }
 }
 
